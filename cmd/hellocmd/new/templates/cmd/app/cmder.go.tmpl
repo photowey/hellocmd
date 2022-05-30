@@ -7,7 +7,7 @@ import (
 	"codeup.aliyun.com/uphicoo/gokit/stringz"
 	"github.com/spf13/cobra"
 
-	"uphicoo.com/uphicoo/project-template/internal/app"
+	"uphicoo.com/uphicoo/{{ .Name }}/internal/app"
 )
 
 const (
@@ -18,7 +18,7 @@ var (
 	conf string
 
 	root = &cobra.Command{
-		Use:   "project-template",
+		Use:   "{{ .Name }}",
 		Short: "项目模板服务",
 		Long:  "项目模板服务",
 		Run: func(cmd *cobra.Command, args []string) {

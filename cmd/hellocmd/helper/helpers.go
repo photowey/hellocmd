@@ -13,8 +13,8 @@ import (
 func DetermineModPath(projectPath string) (modPath string) {
 	dir := filepath.Dir(projectPath)
 	for {
-		if _, err := os.Stat(filepath.Join(dir, "go.mod")); err == nil {
-			content, _ := ioutil.ReadFile(filepath.Join(dir, "go.mod"))
+		if _, err := os.Stat(filepath.Join(dir, "go.mod.tmpl")); err == nil {
+			content, _ := ioutil.ReadFile(filepath.Join(dir, "go.mod.tmpl"))
 			mod := regexz.RegexpExtract(`module\s+(?P<alias>[\S]+)`, string(content), "$alias")
 			name := strings.TrimPrefix(filepath.Dir(projectPath), dir)
 			name = strings.TrimPrefix(name, string(os.PathSeparator))
