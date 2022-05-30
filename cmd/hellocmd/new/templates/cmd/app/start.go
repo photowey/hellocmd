@@ -1,0 +1,59 @@
+package cmder
+
+import (
+	"context"
+	"os"
+	"os/signal"
+	"time"
+
+	"codeup.aliyun.com/uphicoo/gokit/expression"
+	"codeup.aliyun.com/uphicoo/gokit/log"
+	"github.com/spf13/cobra"
+
+	"uphicoo.com/uphicoo/project-template/internal/api/v1/controller"
+	"uphicoo.com/uphicoo/project-template/internal/config"
+	"uphicoo.com/uphicoo/project-template/pkg/database"
+)
+
+const (
+	SystemExit         = 1
+	ErrChannelSize     = 1
+	HealthCheckTimeout = 15 // 默认: 健康检查 15s 超时.
+)
+
+var start = &cobra.Command{
+	Use:   "start",
+	Short: "启动服务",
+	Long:  `启动消息中心服务`,
+	Run: func(cmd *cobra.Command, args []string) {
+		// 监听退出信号
+		quit := make(chan os.Signal, SystemExit)
+		signal.Notify(quit, os.Interrupt, os.Kill)
+		// 监听错误
+		crush := make(chan error, ErrChannelSize)
+
+		timeout := expression.TrinaryOperationUInt32(config.Timeout() > 0, config.Timeout(), HealthCheckTimeout)
+		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeout)*time.Second) // ping
+		defer cancel()
+
+		// 启动服务
+		ctrl := controller.NewController(config.Host())
+		ctrl.Run(ctx, crush)
+
+		select {
+		case <-quit:
+			clear()
+			log.Info("shutting down server...")
+			return
+		case err := <-crush:
+			log.Errorf("server crush, and quit: %v", err)
+			clear()
+			return
+		}
+	},
+}
+
+func clear() {
+	_ = database.RDBMSClientClose()
+	log.Sync()
+}

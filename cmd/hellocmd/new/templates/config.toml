@@ -1,0 +1,110 @@
+# 配置配置示例
+
+# ---------------------------------------------------------------- app
+
+print_config = false
+# 正式环境,必须标注为: prod
+# 环境: local, test, benchmark, stage, prod
+env = "local"    # 校验
+# 外部接口: ip:port
+host = ":5566"   # 校验
+# 服务器启动后-执行健康检查超时时间
+# 也就是说: 在启动后 请求接口: http://${host}/healthz -> http://localhost:5566/healthz
+# 如果: 15s 还是失败就会打印一个警告日志
+start_check_health_time_out = 15
+
+# ---------------------------------------------------------------- log
+
+[log]
+
+# 日志级别: debug, info, warn, error
+level = "debug"
+# 日志路径 /var/log
+path = "logs"
+file_name = "notices.log"
+# 日志文件最大大小，单位mb
+max_size = 5       # 校验
+# 日志保留天数
+max_age_day = 1    # 校验
+# 是否启用压缩
+enable_compress = false
+# 是否输出到标准输出
+enable_stdout = true
+# 日志是否采用 json 格式输出 默认: false
+enable_json = false
+
+# ---------------------------------------------------------------- database
+# ---------------------------------------------------------------- database.notices
+
+[databases]
+
+[databases.notices]
+# 是否启动数据库 false: App启动时将不会实例化数据库客户端
+enabled = true
+# 数据库驱动，支持 mysql, postgres
+driver = "mysql"                # 校验
+# 数据库名称
+dbname = "notices"              # 校验
+# 数据库服务器连接用户名
+username = "root"               # 校验
+# 数据库服务器连接密码
+password = "root"               # 校验
+# 主数据库服务器地址
+write_host = "192.168.19.250"   # 校验
+# 从数据库服务器地址
+read_host = "192.168.19.250"    # 校验
+# 主数据库服务器:  端口
+write_port = 3307               # 校验 0 < port <= 65535
+# 从数据库服务器:  端口
+read_port = 3307                # 校验 0 < port <= 65535
+# 10分钟30秒
+conn_max_idle_time = "10m30s"
+# 30分钟
+conn_max_life_time = "30m"
+# 最大空闲连接数
+max_idle_conns = 10             # 校验 > 0
+# 最大连接数
+max_open_conns = 100            # 校验 > 0
+
+# ---------------------------------------------------------------- rabbitmq
+
+[rabbitmq]
+
+enabled = true
+host = "192.168.19.250"        # 校验 > 0
+port = 5672                    # 校验 0 < port <= 65535
+# 填写 与 ${order_notify_queue} 和 ${order_exception_queue} 一致的用户名密码和虚拟主机
+user = "guest"                 # 校验
+password = "guest"             # 校验
+vhosts = "vhost_sharkchili"    # 校验
+# 正常订单通知队列
+# Notes: 不用修改
+order_notify_queue = "hicoopay.merchant.notify.sin.que" # 校验
+# 异常订单通知队列
+# Notes: 不用修改
+order_exception_queue = "hicoopay.notice.order.exception.notify.sin.que" # 校验
+
+[rabbitmq.exchangers.notify]
+
+exchanger = "hicoopay.merchant.notify.sin.c"
+routing_key = "hicoopay.merchant.notify.sin.que"
+queue = "hicoopay.merchant.notify.sin.que"
+
+[rabbitmq.exchangers.exception]
+
+exchanger = "hicoopay.notice.order.exception.notify.sin.ch"
+routing_key = "hicoopay.notice.order.exception.notify.sin.que"
+queue = "hicoopay.notice.order.exception.notify.sin.que"
+
+# ---------------------------------------------------------------- redis
+
+[redis]
+
+enabled = true
+prefix = "notifier"      # 校验
+# Redis 主机
+host = "192.168.19.250"  # 校验
+port = 6379              # 校验 0 < port <= 65535
+username = ""
+password = ""
+db = 15

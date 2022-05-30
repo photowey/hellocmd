@@ -1,0 +1,134 @@
+package config
+
+import (
+	"fmt"
+
+	"codeup.aliyun.com/uphicoo/gokit/helper"
+	"entgo.io/ent/dialect"
+)
+
+const (
+	MinConn = 0
+	MinPost = 0
+	MinDB   = 0
+	MaxPost = 65535
+)
+
+// validateConfigItem 验证配置项
+//
+// @dangerous 触发 panic
+func validateConfigItem() {
+	validateHost()
+	validateTimeout()
+	validateLog()
+	validateDatabase()
+	validateRabbitMQ()
+	validateRedis()
+}
+
+func validateHost() {
+	if helper.IsBlankString(Host()) {
+		panic("config.validate.host: 请配置: 监听的主机:host")
+	}
+}
+
+func validateTimeout() {
+	// do nothing
+}
+
+func validateLog() {
+	logConf := Log()
+	if logConf.MaxSize <= 0 {
+		panic("config.validate.log: 请配置: 日志:max_size")
+	}
+	if logConf.MaxBackups < 0 {
+		panic("config.validate.log: 请配置: 日志:max_backups")
+	}
+	if logConf.MaxAgeDay <= 0 {
+		panic("config.validate.log: 请配置: 日志:max_age_day")
+	}
+}
+
+func validateDatabase() {
+	databaseMap := DatabaseMap()
+	if len(databaseMap) == 0 {
+		panic("config.validate.database: 请配置: 数据库")
+	}
+	for dbn, conf := range databaseMap {
+		fmt.Println(dbn)
+		fmt.Println(conf)
+		if helper.IsBlankString(conf.Driver) {
+			panic(fmt.Sprintf("config.validate.database: 请配置: 数据库:%s 的驱动名称(%s,%s)", dbn, dialect.MySQL, dialect.Postgres))
+		}
+		if helper.IsBlankString(conf.Dbname) {
+			panic("config.validate.database: 请配置: 数据库名称")
+		}
+		if helper.IsBlankString(conf.Username) {
+			panic(fmt.Sprintf("config.validate.database: 请配置: 数据库: %s 的用户名:usename", dbn))
+		}
+		if helper.IsBlankString(conf.Password) {
+			panic(fmt.Sprintf("config.validate.database: 请配置: 数据库: %s 的用户密码:password", dbn))
+		}
+		if helper.IsBlankString(conf.WriteHost) {
+			panic(fmt.Sprintf("config.validate.database: 请配置: 数据库: %s 的写主机名:write_host", dbn))
+		}
+		if helper.IsBlankString(conf.ReadHost) {
+			panic(fmt.Sprintf("config.validate.database: 请配置: 数据库: %s 的写主机名:read_host", dbn))
+		}
+		if conf.WritePort <= MinPost || conf.WritePort >= MaxPost {
+			panic(fmt.Sprintf("config.validate.database: 请配置: 数据库: %s 的正确的读主机端口:write_port", dbn))
+		}
+		if conf.ReadPort <= MinPost || conf.ReadPort >= MaxPost {
+			panic(fmt.Sprintf("config.validate.database: 请配置: 数据库: %s 的正确的写主机端口:read_port", dbn))
+		}
+		if conf.MaxIdleConns <= MinConn {
+			panic(fmt.Sprintf("config.validate.database: 请配置: 数据库: %s 的正确的空闲连接数:max_idle_conns", dbn))
+		}
+		if conf.MaxOpenConns <= MinConn {
+			panic(fmt.Sprintf("config.validate.database: 请配置: 数据库: %s 的正确的最大连接数:max_open_conns", dbn))
+		}
+	}
+}
+
+func validateRabbitMQ() {
+	conf := Rabbit()
+	if helper.IsBlankString(conf.Host) {
+		panic("config.validate.rabbitmq: 请配置: 消息队列主机:host")
+	}
+	if conf.Port <= MinPost || conf.Port >= MaxPost {
+		panic("config.validate.rabbitmq: 请配置: 消息队列端口:port")
+	}
+	if helper.IsBlankString(conf.User) {
+		panic("config.validate.rabbitmq: 请配置: 消息队列用户:user")
+	}
+	if helper.IsBlankString(conf.Password) {
+		panic("config.validate.rabbitmq: 请配置: 消息队列用户密码:password")
+	}
+	if helper.IsBlankString(conf.Vhosts) {
+		panic("config.validate.rabbitmq: 请配置: 消息队列虚拟主机:vhosts")
+	}
+
+	exchangerMap := conf.ExchangerMap
+	if len(exchangerMap) == 0 {
+		panic("config.validate.rabbitmq.exchanges: 请配置: 消息队列")
+	}
+
+	for key, exchanger := range exchangerMap {
+		if helper.IsBlankString(exchanger.Queue) {
+			panic(fmt.Sprintf("config.validate.rabbitmq.exchanges: 请配置: 消息队列(%s)队列名称:queue", key))
+		}
+	}
+}
+
+func validateRedis() {
+	conf := Redis()
+	if helper.IsBlankString(conf.Host) {
+		panic("config.validate.redis: 请配置: Redis主机:host")
+	}
+	if conf.Port <= MinPost || conf.Port >= MaxPost {
+		panic("config.validate.redis: 请配置: Redis端口:port")
+	}
+	if conf.DB <= MinDB {
+		panic("config.validate.redis: 请配置: 正确的DB:db")
+	}
+}
