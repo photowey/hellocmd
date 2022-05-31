@@ -89,9 +89,9 @@ func Route(ctx *fasthttp.RequestCtx) {
 
 func dispatch(ctx *fasthttp.RequestCtx) {
 	path := string(ctx.Path())
-	for _, handler := range _handlers {
-		if handler.Supports(path) {
-			handler.Handle(ctx)
+	for _, controller := range _handlers {
+		if controller.Supports(path) {
+			controller.Handle(ctx)
 			return
 		}
 	}

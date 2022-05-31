@@ -37,14 +37,14 @@ func validateTimeout() {
 }
 
 func validateLog() {
-	logConf := Log()
-	if logConf.MaxSize <= 0 {
+	conf := Log()
+	if conf.MaxSize <= 0 {
 		panic("config.validate.log: 请配置: 日志:max_size")
 	}
-	if logConf.MaxBackups < 0 {
+	if conf.MaxBackups < 0 {
 		panic("config.validate.log: 请配置: 日志:max_backups")
 	}
-	if logConf.MaxAgeDay <= 0 {
+	if conf.MaxAgeDay <= 0 {
 		panic("config.validate.log: 请配置: 日志:max_age_day")
 	}
 }
@@ -55,8 +55,6 @@ func validateDatabase() {
 		panic("config.validate.database: 请配置: 数据库")
 	}
 	for dbn, conf := range databaseMap {
-		fmt.Println(dbn)
-		fmt.Println(conf)
 		if helper.IsBlankString(conf.Driver) {
 			panic(fmt.Sprintf("config.validate.database: 请配置: 数据库:%s 的驱动名称(%s,%s)", dbn, dialect.MySQL, dialect.Postgres))
 		}

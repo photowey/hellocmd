@@ -5,6 +5,7 @@ import (
 	"codeup.aliyun.com/uphicoo/gokit/stringz"
 	perrors "github.com/pkg/errors"
 
+	"uphicoo.com/uphicoo/bozztek/internal/api/router"
 	"uphicoo.com/uphicoo/{{ .Name }}/internal/config"
 	"uphicoo.com/uphicoo/{{ .Name }}/internal/config/configregistry"
 	"uphicoo.com/uphicoo/{{ .Name }}/pkg/database"
@@ -40,6 +41,9 @@ func Start(conf string) error {
 	if err = database.RedisClientInit(config.Redis()); err != nil {
 		return perrors.Errorf("app: init the redis error: %v", err)
 	}
+
+	// 5.初始化: 收集 api.v1.controller
+	router.CollectHandler()
 
 	// TODO
 
