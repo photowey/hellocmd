@@ -17,17 +17,17 @@ import (
 
 var (
 	_            dialect.Driver = (*driverwrapper.DriverWrapper)(nil)
-	_clientProxy *ent.Client    // notices | merchants 数据库客户端代理
+	_clientProxy *ent.Client    // {{ .Name }} 数据库客户端代理
 )
 
 // RDBMSClientInit 初始化-据库客户端
 func RDBMSClientInit(confMap map[string]config.DBConfig) error {
-	confN, ok := confMap[DefaultDatabase]
+	confDefault, ok := confMap[DefaultDatabase]
 	if !ok {
 		return perrors.Errorf("database.rdbms: 数据库:[%s]配置不存在,请核实", DefaultDatabase)
 	}
 
-	err := initDBClientProxy(confN)
+	err := initDBClientProxy(confDefault)
 	if err != nil {
 		return perrors.Errorf("database.rdbms: 数据库: 配置数据库驱动代理失败:%v", err)
 	}
@@ -47,25 +47,25 @@ func RDBMSClientClose() error {
 
 // ---------------------------------------------------------------- clients (temp design)
 
-// ProxyClient 返回 notices | merchants 数据库客户端 代理
+// ProxyClient 返回 {{ .Name }} 数据库客户端 代理
 func ProxyClient() *ent.Client {
 	return _clientProxy
 }
 
 // ---------------------------------------------------------------- private
 
-func initDBClientProxy(confN config.DBConfig) error {
-	// 初始化 notices 数据库驱动
-	driverN, err := initNoticeDriver(confN)
+func initDBClientProxy(confDefault config.DBConfig) error {
+	// 初始化 {{ .Name }} 数据库驱动
+	driverDefault, err := initDefaultDriver(confDefault)
 	if err != nil {
 		return err
 	}
 
 	driverProxy := driverproxy.NewDriverProxy()
-	driverProxy.RegisterDialect(driverN.Dialect())
+	driverProxy.RegisterDialect(driverDefault.Dialect())
 
-	if driverN != nil {
-		err = driverProxy.RegisterDriver(DefaultDatabase, driverN)
+	if driverDefault != nil {
+		err = driverProxy.RegisterDriver(DefaultDatabase, driverDefault)
 		if err != nil {
 			return err
 		}
@@ -76,46 +76,25 @@ func initDBClientProxy(confN config.DBConfig) error {
 	return nil
 }
 
-func initNoticeDriver(confN config.DBConfig) (dialect.Driver, error) {
+func initDefaultDriver(confDefault config.DBConfig) (dialect.Driver, error) {
 	// 不实例化
-	if !confN.Enabled {
+	if !confDefault.Enabled {
 		return nil, nil
 	}
 
-	writeDb, err := determineDbDriver(confN, true)
+	writeDb, err := determineDbDriver(confDefault, true)
 	if err != nil {
 		return nil, err
 	}
-	readDb, err := determineDbDriver(confN, false)
-	if err != nil {
-		return nil, err
-	}
-
-	driverN := driverwrapper.NewDriverWrapper(writeDb, readDb)
-	driverN.RegisterDialect(confN.Driver)
-
-	return driverN, nil
-}
-
-func initMerchantDriver(confM config.DBConfig) (dialect.Driver, error) {
-	// 不实例化
-	if !confM.Enabled {
-		return nil, nil
-	}
-
-	writeDb, err := determineDbDriver(confM, true)
-	if err != nil {
-		return nil, err
-	}
-	readDb, err := determineDbDriver(confM, false)
+	readDb, err := determineDbDriver(confDefault, false)
 	if err != nil {
 		return nil, err
 	}
 
-	driverM := driverwrapper.NewDriverWrapper(writeDb, readDb)
-	driverM.RegisterDialect(confM.Driver)
+	driverDefault := driverwrapper.NewDriverWrapper(writeDb, readDb)
+	driverDefault.RegisterDialect(confDefault.Driver)
 
-	return driverM, nil
+	return driverDefault, nil
 }
 
 func determineDbDriver(conf config.DBConfig, writeHost bool) (*sql.Driver, error) {
