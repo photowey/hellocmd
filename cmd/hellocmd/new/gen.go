@@ -65,7 +65,7 @@ func doCreateProject() (err error) {
 		return
 	}
 	for _, name := range box.List() {
-		if project.ModPrefix != "" && name == "go.mod.tmpl.tmpl" {
+		if project.ModPrefix != "" && name == "go.mod.tmpl" {
 			// continue // not skipping
 		}
 		tmpl, _ := box.FindString(name)

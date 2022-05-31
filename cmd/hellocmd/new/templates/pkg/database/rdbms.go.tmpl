@@ -2,6 +2,7 @@ package database
 
 import (
 	"fmt"
+	"sync"
 
 	"codeup.aliyun.com/uphicoo/gokit/pkg/database/rdbms/driverproxy"
 	"codeup.aliyun.com/uphicoo/gokit/pkg/database/rdbms/driverwrapper"
@@ -17,29 +18,46 @@ import (
 
 var (
 	_            dialect.Driver = (*driverwrapper.DriverWrapper)(nil)
-	_clientProxy *ent.Client    // {{ .Name }} 数据库客户端代理
+	_clientProxy *ent.Client    // bozztek 数据库客户端代理
+	_rdbmsLock   sync.Mutex
+	_rdbmsInited = false
 )
 
-// RDBMSClientInit 初始化-据库客户端
-func RDBMSClientInit(confMap map[string]config.DBConfig) error {
+// InitRDBMSClient 初始化-据库客户端
+func InitRDBMSClient(confMap map[string]config.DBConfig) (err error) {
 	confDefault, ok := confMap[DefaultDatabase]
 	if !ok {
 		return perrors.Errorf("database.rdbms: 数据库:[%s]配置不存在,请核实", DefaultDatabase)
 	}
-
-	err := initDBClientProxy(confDefault)
-	if err != nil {
-		return perrors.Errorf("database.rdbms: 数据库: 配置数据库驱动代理失败:%v", err)
+	if !confDefault.Enabled {
+		return
+	}
+	if _rdbmsInited {
+		return
 	}
 
-	return nil
+	if _clientProxy == nil {
+		_rdbmsLock.Lock()
+		defer _rdbmsLock.Unlock()
+		if _clientProxy == nil {
+			_clientProxy, err = initDBClientProxy(confDefault)
+			if err != nil {
+				err = perrors.Errorf("database.rdbms: 数据库: 配置数据库驱动代理失败:%v", err)
+			}
+			_rdbmsInited = true
+		}
+	}
+
+	return
 }
 
 // RDBMSClientClose 关闭-据库客户端
 func RDBMSClientClose() error {
-	err := _clientProxy.Close()
-	if err != nil {
-		return perrors.New("database.clientProxy:close.error" + err.Error())
+	if _clientProxy != nil {
+		err := _clientProxy.Close()
+		if err != nil {
+			return perrors.New("database.clientProxy:close.error" + err.Error())
+		}
 	}
 
 	return nil
@@ -47,18 +65,18 @@ func RDBMSClientClose() error {
 
 // ---------------------------------------------------------------- clients (temp design)
 
-// ProxyClient 返回 {{ .Name }} 数据库客户端 代理
+// ProxyClient 返回 bozztek 数据库客户端 代理
 func ProxyClient() *ent.Client {
 	return _clientProxy
 }
 
 // ---------------------------------------------------------------- private
 
-func initDBClientProxy(confDefault config.DBConfig) error {
-	// 初始化 {{ .Name }} 数据库驱动
+func initDBClientProxy(confDefault config.DBConfig) (*ent.Client, error) {
+	// 初始化 bozztek 数据库驱动
 	driverDefault, err := initDefaultDriver(confDefault)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	driverProxy := driverproxy.NewDriverProxy()
@@ -67,21 +85,16 @@ func initDBClientProxy(confDefault config.DBConfig) error {
 	if driverDefault != nil {
 		err = driverProxy.RegisterDriver(DefaultDatabase, driverDefault)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 
 	_clientProxy = ent.NewClient(ent.Driver(driverProxy))
 
-	return nil
+	return _clientProxy, nil
 }
 
 func initDefaultDriver(confDefault config.DBConfig) (dialect.Driver, error) {
-	// 不实例化
-	if !confDefault.Enabled {
-		return nil, nil
-	}
-
 	writeDb, err := determineDbDriver(confDefault, true)
 	if err != nil {
 		return nil, err

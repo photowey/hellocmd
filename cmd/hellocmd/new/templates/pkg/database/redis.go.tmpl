@@ -2,6 +2,7 @@ package database
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/gomodule/redigo/redis"
 	perrors "github.com/pkg/errors"
@@ -11,22 +12,36 @@ import (
 	"uphicoo.com/uphicoo/{{ .Name }}/internal/config"
 )
 
-var _rt *rediz.RedizTemplate
+var (
+	_rt          *rediz.RedizTemplate
+	_redisLock   sync.Mutex
+	_redisInited = false
+)
 
-// RedisClientInit 初始化 RedizTemplate 实例
-func RedisClientInit(conf config.RedisConfig) (err error) {
+// InitRedisTemplate 初始化 RedizTemplate 实例
+func InitRedisTemplate(conf config.RedisConfig) (err error) {
 	// 不实例化
 	if !conf.Enabled {
 		return nil
 	}
-
-	_rt, err = rediz.NewRedizTemplate(populateRedisAddress(conf), conf.Password, redis.DialDatabase(conf.DB))
-	err = _rt.Ping()
-	if err != nil {
-		return perrors.Errorf("database.redis 数据库 PING 失败,请核实配置信息:%w", err)
+	if _redisInited {
+		return nil
 	}
 
-	return err
+	if _rt == nil {
+		_redisLock.Lock()
+		defer _redisLock.Unlock()
+		if _rt == nil {
+			_rt, err = rediz.NewRedizTemplate(populateRedisAddress(conf), conf.Password, redis.DialDatabase(conf.DB))
+			err = _rt.Ping()
+			if err != nil {
+				return perrors.Errorf("database.redis 数据库 PING 失败,请核实配置信息:%w", err)
+			}
+			_redisInited = true
+		}
+	}
+
+	return
 }
 
 func RedisTemplate() *rediz.RedizTemplate {

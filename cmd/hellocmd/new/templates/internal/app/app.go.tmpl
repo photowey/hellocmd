@@ -33,12 +33,12 @@ func Start(conf string) error {
 	}
 
 	// 3.初始化: 数据库
-	if err = database.RDBMSClientInit(config.DatabaseMap()); err != nil {
+	if err = database.InitRDBMSClient(config.DatabaseMap()); err != nil {
 		return perrors.Errorf("app: init the rdbms error: %v", err)
 	}
 
 	// 4.初始化: Redis 缓存
-	if err = database.RedisClientInit(config.Redis()); err != nil {
+	if err = database.InitRedisTemplate(config.Redis()); err != nil {
 		return perrors.Errorf("app: init the redis error: %v", err)
 	}
 
