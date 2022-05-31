@@ -22,9 +22,9 @@ var (
 
 // RDBMSClientInit 初始化-据库客户端
 func RDBMSClientInit(confMap map[string]config.DBConfig) error {
-	confN, ok := confMap[NoticeDatabase]
+	confN, ok := confMap[DefaultDatabase]
 	if !ok {
-		return perrors.Errorf("database.rdbms: 数据库:[%s]配置不存在,请核实", NoticeDatabase)
+		return perrors.Errorf("database.rdbms: 数据库:[%s]配置不存在,请核实", DefaultDatabase)
 	}
 
 	err := initDBClientProxy(confN)
@@ -65,7 +65,7 @@ func initDBClientProxy(confN config.DBConfig) error {
 	driverProxy.RegisterDialect(driverN.Dialect())
 
 	if driverN != nil {
-		err = driverProxy.RegisterDriver(NoticeDatabase, driverN)
+		err = driverProxy.RegisterDriver(DefaultDatabase, driverN)
 		if err != nil {
 			return err
 		}

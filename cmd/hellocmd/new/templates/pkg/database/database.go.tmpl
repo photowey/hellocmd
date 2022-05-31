@@ -6,7 +6,7 @@ import (
 
 const (
 	KeywordDatabase = "database"
-	NoticeDatabase  = "notices"
+	DefaultDatabase  = "{{ .Name }}"
 )
 
 func NewValueContext(database string) context.Context {
