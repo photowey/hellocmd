@@ -38,13 +38,13 @@ enable_json = false
 
 [databases]
 
-[databases.notices]
+[databases.{{ .Name }}]
 # 是否启动数据库 false: App启动时将不会实例化数据库客户端
 enabled = true
 # 数据库驱动，支持 mysql, postgres
 driver = "mysql"                # 校验
 # 数据库名称
-dbname = "notices"              # 校验
+dbname = "{{ .Name }}"              # 校验
 # 数据库服务器连接用户名
 username = "root"               # 校验
 # 数据库服务器连接密码
@@ -73,16 +73,9 @@ max_open_conns = 100            # 校验 > 0
 enabled = true
 host = "192.168.19.250"        # 校验 > 0
 port = 5672                    # 校验 0 < port <= 65535
-# 填写 与 ${order_notify_queue} 和 ${order_exception_queue} 一致的用户名密码和虚拟主机
 user = "guest"                 # 校验
 password = "guest"             # 校验
 vhosts = "vhost_sharkchili"    # 校验
-# 正常订单通知队列
-# Notes: 不用修改
-order_notify_queue = "hicoopay.merchant.notify.sin.que" # 校验
-# 异常订单通知队列
-# Notes: 不用修改
-order_exception_queue = "hicoopay.notice.order.exception.notify.sin.que" # 校验
 
 [rabbitmq.exchangers.notify]
 
@@ -101,7 +94,7 @@ queue = "hicoopay.notice.order.exception.notify.sin.que"
 [redis]
 
 enabled = true
-prefix = "notifier"      # 校验
+prefix = "{{ .Name }}"      # 校验
 # Redis 主机
 host = "192.168.19.250"  # 校验
 port = 6379              # 校验 0 < port <= 65535
