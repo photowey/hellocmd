@@ -1,0 +1,47 @@
+package controller
+
+import (
+	"codeup.aliyun.com/uphicoo/gokit/jsonz"
+	"codeup.aliyun.com/uphicoo/gokit/typez"
+	"github.com/valyala/fasthttp"
+
+	"uphicoo.com/uphicoo/{{ .Name }}/internal/api/request"
+)
+
+// +fasthttp:router=true
+// +fasthttp:router:method=GET
+// +fasthttp:router:path=/default
+
+type DefaultHandler struct{}
+
+// Order 序号
+//
+// 永远排在最后
+func (h DefaultHandler) Order() int64 {
+	return typez.Int64Max
+}
+
+func (h DefaultHandler) Method() string {
+	return "All"
+}
+
+func (h DefaultHandler) Supports(_ request.Context) bool {
+	return true
+}
+
+func (h DefaultHandler) Handle(hctx request.Context) {
+	hctx.Ctx.SetStatusCode(fasthttp.StatusNotFound)
+	hctx.Ctx.SetBody(jsonz.Bytes(newNotFound()))
+}
+
+type NotFound struct {
+	code string
+	msg  string
+}
+
+func newNotFound() *NotFound {
+	return &NotFound{
+		code: "404",
+		msg:  "NotFound",
+	}
+}

@@ -1,0 +1,116 @@
+package router
+
+import (
+	"log"
+	"sort"
+	"sync"
+
+	"codeup.aliyun.com/uphicoo/gokit/pkg/httpz"
+	"codeup.aliyun.com/uphicoo/gokit/stringz"
+	"github.com/valyala/fasthttp"
+
+	"uphicoo.com/uphicoo/{{ .Name }}/internal/api/request"
+)
+
+var (
+	_registry *Registry
+	_lock     sync.RWMutex
+)
+
+func init() {
+	_registry = newRegistry()
+}
+
+type Registry struct {
+	ctx             map[string]request.Handler
+	requestHandlers []request.Handler
+}
+
+func (registry Registry) Handlers() []request.Handler {
+	_lock.RLock()
+	requestHandlers := registry.requestHandlers
+	if len(requestHandlers) == 0 {
+		_lock.RUnlock()
+		_lock.Lock()
+		defer _lock.Unlock()
+		if len(requestHandlers) == 0 {
+			requestHandlers = registry.handlers()
+		}
+	}
+
+	return requestHandlers
+}
+
+func (registry Registry) register(method, path string, handler request.Handler) {
+	_lock.Lock()
+	defer _lock.Unlock()
+	if method == stringz.DefaultEmptyString {
+		panic("handleregistry: web.http.handler.registry: Register method is blank")
+	}
+
+	if handler == nil {
+		panic("handleregistry: web.http.handler.registry: Register handler is nil")
+	}
+
+	requestMapping := request.PopulateRequestMapping(method, path)
+	if _, dup := registry.ctx[requestMapping]; dup {
+		panic("handleregistry: web.http.handler.registry: Register called twice for path: " + path)
+	}
+
+	registry.ctx[requestMapping] = handler
+	log.Printf("http.router: register web.http.handler:[%s]", requestMapping)
+}
+
+func (registry Registry) handlers() []request.Handler {
+	handlers := make([]request.Handler, 0)
+
+	for _, controller := range registry.ctx {
+		handlers = append(handlers, controller)
+	}
+
+	// controller 排序
+	sort.Slice(handlers, func(i, j int) bool {
+		return handlers[i].Order() < handlers[j].Order()
+	})
+
+	registry.requestHandlers = handlers
+
+	return handlers
+}
+
+func newRegistry() *Registry {
+	return &Registry{
+		ctx:             make(map[string]request.Handler),
+		requestHandlers: make([]request.Handler, 0),
+	}
+}
+
+// ----------------------------------------------------------------
+
+// Register - 注册 handler
+func Register(method, path string, handler request.Handler) {
+	_registry.register(method, path, handler)
+}
+
+func Handlers() []request.Handler {
+	return _registry.Handlers()
+}
+
+// Route 根据请求地址 path 路由到合适的 Handler
+func Route(ctx *fasthttp.RequestCtx) {
+	ctx.SetContentType(httpz.ContentTypeApplicationJSON)
+	ctx.SetStatusCode(fasthttp.StatusOK)
+
+	dispatch(ctx)
+}
+
+func dispatch(ctx *fasthttp.RequestCtx) {
+	hctx := request.NewRequestContext(ctx)
+	handlers := Handlers()
+	for _, controller := range handlers {
+		if controller.Supports(hctx) {
+			controller.Handle(hctx)
+			return
+		}
+	}
+}

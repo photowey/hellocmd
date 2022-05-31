@@ -10,6 +10,7 @@ import (
 	"codeup.aliyun.com/uphicoo/gokit/log"
 	"github.com/spf13/cobra"
 
+	"uphicoo.com/uphicoo/{{ .Name }}/internal/api/router"
 	"uphicoo.com/uphicoo/{{ .Name }}/internal/api/v1/controller"
 	"uphicoo.com/uphicoo/{{ .Name }}/internal/config"
 	"uphicoo.com/uphicoo/{{ .Name }}/pkg/database"
@@ -36,6 +37,8 @@ var start = &cobra.Command{
 		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeout)*time.Second) // ping
 		defer cancel()
 
+		// 排序 handlers
+		router.Handlers()
 		// 启动服务
 		ctrl := controller.NewController(config.Host())
 		ctrl.Run(ctx, crush)

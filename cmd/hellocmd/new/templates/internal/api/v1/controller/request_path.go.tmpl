@@ -1,0 +1,8 @@
+package controller
+
+type RequestPath = string
+
+const (
+	RequestPathHealth RequestPath = "/healthz" // 健康检查
+	RequestPathPing   RequestPath = "/ping"    // 默认
+)

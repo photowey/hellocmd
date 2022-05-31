@@ -1,0 +1,37 @@
+package controller
+
+import (
+	"codeup.aliyun.com/uphicoo/gokit/jsonz"
+
+	"uphicoo.com/uphicoo/{{ .Name }}/internal/api/request"
+	"uphicoo.com/uphicoo/{{ .Name }}/internal/types"
+)
+
+const (
+	HealthHandlerMethod = "GET"
+)
+
+// +fasthttp:router=true
+// +fasthttp:router:method=GET
+// +fasthttp:router:path=/healthz
+
+type HealthHandler struct{}
+
+func (h HealthHandler) Order() int64 {
+	return 1
+}
+
+func (h HealthHandler) Method() string {
+	return HealthHandlerMethod
+}
+
+func (h HealthHandler) Supports(hctx request.Context) bool {
+	return request.PopulateRequestMapping(h.Method(), RequestPathHealth) == hctx.requestMapping()
+}
+
+// Handle
+//
+// GET /healthz
+func (h HealthHandler) Handle(hctx request.Context) {
+	hctx.Ctx.SetBody(jsonz.Bytes(types.NewUpResponse()))
+}

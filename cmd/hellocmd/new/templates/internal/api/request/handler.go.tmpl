@@ -1,0 +1,20 @@
+package request
+
+import (
+	"fmt"
+	"strings"
+
+	"codeup.aliyun.com/uphicoo/gokit/orderz"
+)
+
+// Handler - fasthttp request handler
+type Handler interface {
+	orderz.Ordered
+	Method() string
+	Supports(ctx Context) bool
+	Handle(ctx Context)
+}
+
+func PopulateRequestMapping(method, path string) string {
+	return fmt.Sprintf("%s#%s", strings.ToUpper(method), path)
+}

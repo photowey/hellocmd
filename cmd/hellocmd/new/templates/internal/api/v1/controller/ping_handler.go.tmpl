@@ -1,0 +1,35 @@
+package controller
+
+import (
+	"uphicoo.com/uphicoo/{{ .Name }}/internal/api/request"
+)
+
+const (
+	PingHandlerMethod = "GET"
+	Pong              = "Pong"
+)
+
+// +fasthttp:router=true
+// +fasthttp:router:method=GET
+// +fasthttp:router:path=/ping
+
+type PingHandler struct{}
+
+func (h PingHandler) Order() int64 {
+	return 0
+}
+
+func (h PingHandler) Method() string {
+	return PingHandlerMethod
+}
+
+func (h PingHandler) Supports(hctx request.Context) bool {
+	return request.PopulateRequestMapping(h.Method(), PingHandlerMethod) == hctx.requestMapping()
+}
+
+// Handle
+//
+// GET /ping
+func (h PingHandler) Handle(hctx request.Context) {
+	hctx.Ctx.SetBodyString(Pong)
+}

@@ -1,0 +1,27 @@
+package request
+
+import (
+	"github.com/valyala/fasthttp"
+)
+
+type Context struct {
+	Ctx    *fasthttp.RequestCtx `json:"ctx"`
+	Method string               `json:"method"`
+	Path   string               `json:"path"`
+
+	// TODO
+}
+
+func (ctx Context) requestMapping() string {
+	return PopulateRequestMapping(ctx.Method, ctx.Path)
+}
+
+func NewRequestContext(ctx *fasthttp.RequestCtx) Context {
+	path := string(ctx.Path())
+	method := string(ctx.Method())
+	return Context{
+		Ctx:    ctx,
+		Method: method,
+		Path:   path,
+	}
+}
