@@ -1,8 +1,15 @@
 package main
 
 import (
+	"math/rand"
+	"time"
+
 	App "uphicoo.com/uphicoo/{{ .Name }}/cmd/app"
 )
+
+func init() {
+	rand.Seed(time.Now().UnixNano())
+}
 
 func main() {
 	App.Run()
